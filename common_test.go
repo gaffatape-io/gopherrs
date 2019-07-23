@@ -10,7 +10,7 @@ import (
 func TestErrors(t *testing.T) {
 	tests := []struct {
 		code  codes.Code
-		ctor  func(opts ...Option) *GRPCError
+		ctor  func(cause error, opts ...Option) *GRPCError
 		check func(err error) bool
 	}{
 		{
@@ -92,14 +92,14 @@ func TestErrors(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Log(tc, "config:", Configuration)
-		err := tc.ctor()
+		err := tc.ctor(nil)
 		t.Log(err)
 
 		if err.Code != tc.code {
 			t.Fatal()
 		}
 
-		err2 := tc.ctor(NoStackTrace)
+		err2 := tc.ctor(err, NoStackTrace)
 		t.Log(err2)
 		if err.Error() == err2.Error() {
 			t.Fatal()
