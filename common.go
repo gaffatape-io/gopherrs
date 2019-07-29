@@ -39,6 +39,7 @@ func NoStackTrace(cfg Config) Config {
 // Error implements the error interface.
 func (g *GRPCError) Error() string {
 	buf := bytes.Buffer{}
+	buf.WriteString("code:")
 	buf.WriteString(g.Code.String())
 	if len(g.StackTrace) > 0 {
 		buf.WriteByte('\n')
@@ -80,6 +81,15 @@ func isCode(code codes.Code, err error) bool {
 	// fallback; check against the grpc status.Code package
 	grpcCode := status.Code(err)
 	return code == grpcCode
+}
+
+func Code(err error) codes.Code {
+	if grpcErr, ok := err.(*GRPCError); ok {
+		return grpcErr.Code
+	}
+
+	// fallback; check against the grpc status.Code package
+	return status.Code(err)
 }
 
 func Canceled(cause error, opts ...Option) *GRPCError {
