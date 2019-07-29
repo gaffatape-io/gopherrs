@@ -1,11 +1,9 @@
-package http
+package gopherrs
 
 import (
-	ghttp "net/http"
+	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/gaffatape-io/gopherrs"
 )
 
 func TestError(t *testing.T) {
@@ -14,14 +12,14 @@ func TestError(t *testing.T) {
 		status int
 	}{
 		{
-			gopherrs.InvalidArgument(nil),
-			ghttp.StatusBadRequest,
+			InvalidArgument(nil),
+			http.StatusBadRequest,
 		},
 	}
 
 	for _, tc := range tests {
 		rec := httptest.NewRecorder()
-		Error(rec, tc.err)
+		Write(rec, tc.err)
 		t.Log(rec)
 
 		if rec.Code != tc.status {
