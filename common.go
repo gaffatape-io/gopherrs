@@ -2,48 +2,37 @@ package gopherrs
 
 import (
 	"bytes"
+	"fmt"
 	"runtime/debug"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-var (
-	// Configuration holds the global configuration used when creating errors.
-	Configuration Config = Config{
-		GenerateStacktrace: true,
-	}
-)
-
 // GRPCError is a Go error that holds a grpc error code.
 type GRPCError struct {
 	Cause      error
 	Code       codes.Code
-	StackTrace string
-}
-
-// Config is used to configure the error created.
-type Config struct {
-	GenerateStacktrace bool
-}
-
-// Option is used to override the global config for individual errors.
-type Option func(cfg Config) Config
-
-// NoStackTrace disables stack trace generation for this error.
-func NoStackTrace(cfg Config) Config {
-	cfg.GenerateStacktrace = false
-	return cfg
+	StackTrace []byte
+	DescFmt    string
+	DescData   []interface{}
 }
 
 // Error implements the error interface.
 func (g *GRPCError) Error() string {
-	buf := bytes.Buffer{}
+	buf := &bytes.Buffer{}
 	buf.WriteString("code:")
 	buf.WriteString(g.Code.String())
+
+	if len(g.DescFmt) > 0 {
+		buf.WriteByte('\n')
+		buf.WriteString("desc:")
+		fmt.Fprintf(buf, g.DescFmt, g.DescData...)
+	}
+
 	if len(g.StackTrace) > 0 {
 		buf.WriteByte('\n')
-		buf.WriteString(g.StackTrace)
+		buf.Write(g.StackTrace)
 	}
 
 	if g.Cause != nil {
@@ -55,16 +44,12 @@ func (g *GRPCError) Error() string {
 	return buf.String()
 }
 
-func newError(cause error, code codes.Code, opts []Option) *GRPCError {
-	cfg := Configuration
-	for _, opt := range opts {
-		cfg = opt(cfg)
-	}
+func newError(cause error, code codes.Code, format string, data []interface{}) *GRPCError {
+	err := &GRPCError{cause, code, nil, "", nil}
 
-	err := &GRPCError{cause, code, ""}
-	if cfg.GenerateStacktrace {
-		err.StackTrace = string(debug.Stack())
-	}
+	err.StackTrace = debug.Stack()
+	err.DescFmt = format
+	err.DescData = data
 	return err
 }
 
@@ -92,128 +77,192 @@ func Code(err error) codes.Code {
 	return status.Code(err)
 }
 
-func Canceled(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.Canceled, opts)
+func Canceled(cause error) *GRPCError {
+	return Canceledf(cause, "")
+}
+
+func Canceledf(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.Canceled, f, data)
 }
 
 func IsCanceled(err error) bool {
 	return isCode(codes.Canceled, err)
 }
 
-func Unknown(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.Unknown, opts)
+func Unknown(cause error) *GRPCError {
+	return Unknownf(cause, "")
+}
+
+func Unknownf(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.Unknown, f, data)
 }
 
 func IsUnknown(err error) bool {
 	return isCode(codes.Unknown, err)
 }
 
-func InvalidArgument(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.InvalidArgument, opts)
+func InvalidArgument(cause error) *GRPCError {
+	return InvalidArgumentf(cause, "")
+}
+
+func InvalidArgumentf(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.InvalidArgument, f, data)
 }
 
 func IsInvalidArgument(err error) bool {
 	return isCode(codes.InvalidArgument, err)
 }
 
-func DeadlineExceeded(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.DeadlineExceeded, opts)
+func DeadlineExceeded(cause error) *GRPCError {
+	return DeadlineExceededf(cause, "")
+}
+
+func DeadlineExceededf(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.DeadlineExceeded, f, data)
 }
 
 func IsDeadlineExceeded(err error) bool {
 	return isCode(codes.DeadlineExceeded, err)
 }
 
-func NotFound(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.NotFound, opts)
+func NotFound(cause error) *GRPCError {
+	return NotFoundf(cause, "")
+}
+
+func NotFoundf(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.NotFound, f, data)
 }
 
 func IsNotFound(err error) bool {
 	return isCode(codes.NotFound, err)
 }
 
-func AlreadyExists(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.AlreadyExists, opts)
+func AlreadyExists(cause error) *GRPCError {
+	return AlreadyExistsf(cause, "")
+}
+
+func AlreadyExistsf(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.AlreadyExists, f, data)
 }
 
 func IsAlreadyExists(err error) bool {
 	return isCode(codes.AlreadyExists, err)
 }
 
-func PermissionDenied(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.PermissionDenied, opts)
+func PermissionDenied(cause error) *GRPCError {
+	return PermissionDeniedf(cause, "")
+}
+
+func PermissionDeniedf(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.PermissionDenied, f, data)
 }
 
 func IsPermissionDenied(err error) bool {
 	return isCode(codes.PermissionDenied, err)
 }
 
-func ResourceExhausted(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.ResourceExhausted, opts)
+func ResourceExhausted(cause error) *GRPCError {
+	return ResourceExhaustedf(cause, "")
+}
+
+func ResourceExhaustedf(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.ResourceExhausted, f, data)
 }
 
 func IsResourceExhausted(err error) bool {
 	return isCode(codes.ResourceExhausted, err)
 }
 
-func FailedPrecondition(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.FailedPrecondition, opts)
+func FailedPrecondition(cause error) *GRPCError {
+	return FailedPreconditionf(cause, "")
+}
+
+func FailedPreconditionf(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.FailedPrecondition, f, data)
 }
 
 func IsFailedPrecondition(err error) bool {
 	return isCode(codes.FailedPrecondition, err)
 }
 
-func Aborted(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.Aborted, opts)
+func Aborted(cause error) *GRPCError {
+	return Abortedf(cause, "")
+}
+
+func Abortedf(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.Aborted, f, data)
 }
 
 func IsAborted(err error) bool {
 	return isCode(codes.Aborted, err)
 }
 
-func OutOfRange(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.OutOfRange, opts)
+func OutOfRange(cause error) *GRPCError {
+	return OutOfRangef(cause, "")
+}
+
+func OutOfRangef(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.OutOfRange, f, data)
 }
 
 func IsOutOfRange(err error) bool {
 	return isCode(codes.OutOfRange, err)
 }
 
-func Unimplemented(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.Unimplemented, opts)
+func Unimplemented(cause error) *GRPCError {
+	return Unimplementedf(cause, "")
+}
+
+func Unimplementedf(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.Unimplemented, f, data)
 }
 
 func IsUnimplemeted(err error) bool {
 	return isCode(codes.Unimplemented, err)
 }
 
-func Internal(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.Internal, opts)
+func Internal(cause error) *GRPCError {
+	return Internalf(cause, "")
+}
+
+func Internalf(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.Internal, f, data)
 }
 
 func IsInternal(err error) bool {
 	return isCode(codes.Internal, err)
 }
 
-func Unavailable(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.Unavailable, opts)
+func Unavailable(cause error) *GRPCError {
+	return Unavailablef(cause, "")
+}
+
+func Unavailablef(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.Unavailable, f, data)
 }
 
 func IsUnavailable(err error) bool {
 	return isCode(codes.Unavailable, err)
 }
 
-func DataLoss(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.DataLoss, opts)
+func DataLoss(cause error) *GRPCError {
+	return DataLossf(cause, "")
+}
+
+func DataLossf(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.DataLoss, f, data)
 }
 
 func IsDataLoss(err error) bool {
 	return isCode(codes.DataLoss, err)
 }
 
-func Unauthenticated(cause error, opts ...Option) *GRPCError {
-	return newError(cause, codes.Unauthenticated, opts)
+func Unauthenticated(cause error) *GRPCError {
+	return Unauthenticatedf(cause, "")
+}
+
+func Unauthenticatedf(cause error, f string, data ...interface{}) *GRPCError {
+	return newError(cause, codes.Unauthenticated, f, data)
 }
 
 func IsUnauthenticated(err error) bool {

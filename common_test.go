@@ -10,98 +10,113 @@ import (
 func TestErrors(t *testing.T) {
 	tests := []struct {
 		code  codes.Code
-		ctor  func(cause error, opts ...Option) *GRPCError
+		ctor  func(cause error) *GRPCError
+		ctorf func(cause error, f string, data ...interface{}) *GRPCError
 		check func(err error) bool
 	}{
 		{
 			codes.Canceled,
 			Canceled,
+			Canceledf,
 			IsCanceled,
 		},
 		{
 			codes.Unknown,
 			Unknown,
+			Unknownf,
 			IsUnknown,
 		},
 		{
 			codes.InvalidArgument,
 			InvalidArgument,
+			InvalidArgumentf,
 			IsInvalidArgument,
 		},
 		{
 			codes.DeadlineExceeded,
 			DeadlineExceeded,
+			DeadlineExceededf,
 			IsDeadlineExceeded,
 		},
 		{
 			codes.NotFound,
 			NotFound,
+			NotFoundf,
 			IsNotFound,
 		},
 		{
 			codes.AlreadyExists,
 			AlreadyExists,
+			AlreadyExistsf,
 			IsAlreadyExists,
 		},
 		{
 			codes.PermissionDenied,
 			PermissionDenied,
+			PermissionDeniedf,
 			IsPermissionDenied,
 		},
 		{
 			codes.ResourceExhausted,
 			ResourceExhausted,
+			ResourceExhaustedf,
 			IsResourceExhausted,
 		},
 		{
 			codes.Aborted,
 			Aborted,
+			Abortedf,
 			IsAborted,
 		},
 		{
 			codes.OutOfRange,
 			OutOfRange,
+			OutOfRangef,
 			IsOutOfRange,
 		},
 		{
 			codes.Unimplemented,
 			Unimplemented,
+			Unimplementedf,
 			IsUnimplemeted,
 		},
 		{
 			codes.Internal,
 			Internal,
+			Internalf,
 			IsInternal,
 		},
 		{
 			codes.Unavailable,
 			Unavailable,
+			Unavailablef,
 			IsUnavailable,
 		},
 		{
 			codes.DataLoss,
 			DataLoss,
+			DataLossf,
 			IsDataLoss,
 		},
 		{
 			codes.Unauthenticated,
 			Unauthenticated,
+			Unauthenticatedf,
 			IsUnauthenticated,
 		},
 	}
 
 	for _, tc := range tests {
-		t.Log(tc, "config:", Configuration)
+		t.Log(tc, "config:")
 		err := tc.ctor(nil)
 		t.Log(err)
-
 		if err.Code != tc.code {
 			t.Fatal()
 		}
 
-		err2 := tc.ctor(err, NoStackTrace)
-		t.Log(err2)
-		if err.Error() == err2.Error() {
+		errf := tc.ctorf(nil, "hello:%s%s", "world", "!")
+		t.Log(errf)
+		if err.Error() == errf.Error() {
 			t.Fatal()
 		}
 
