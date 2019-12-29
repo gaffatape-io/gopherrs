@@ -134,6 +134,16 @@ func TestErrors(t *testing.T) {
 		if !tc.check(errStatus) {
 			t.Fatal()
 		}
+
+		we := Wrap(err)
+		if Code(we) != Code(err) {
+			t.Fatal(Code(we), Code(err))
+		}
+
+		wef := Wrapf(err, "wrapper")
+		if Code(wef) != Code(err) {
+			t.Fatal(Code(wef), Code(err))
+		}
 	}
 }
 
