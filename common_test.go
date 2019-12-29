@@ -5,6 +5,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"fmt"
 )
 
 func TestErrors(t *testing.T) {
@@ -135,14 +136,14 @@ func TestErrors(t *testing.T) {
 			t.Fatal()
 		}
 
-		we := Wrap(err)
-		if Code(we) != Code(err) {
-			t.Fatal(Code(we), Code(err))
+		werr := Wrap(err)
+		if Code(werr) != Code(err) {
+			t.Fatal(Code(err), Code(err))
 		}
 
-		wef := Wrapf(err, "wrapper")
-		if Code(wef) != Code(err) {
-			t.Fatal(Code(wef), Code(err))
+		werrf := Wrapf(err, "wrapper")
+		if Code(werrf) != Code(err) {
+			t.Fatal(Code(err), Code(err))
 		}
 	}
 }
@@ -154,14 +155,25 @@ func TestIsCodeSuccessShortcut(t *testing.T) {
 	}
 }
 
-func TestWrapWithNil(t *testing.T) {
-	err := Wrap(nil)
-	if err != nil {
-		t.Fatal()
+func TestWrap(t *testing.T) {
+	err := fmt.Errorf(t.Name())	
+	WrapError(&err)
+
+	if _, ok := err.(*GRPCError); !ok {
+		t.Fatal("Wrap failed", err)
 	}
 
-	errf := Wrapf(nil, "ignored")
-	if errf != nil {
-		t.Fatal()
+	nilErrorMaker := func() error {
+		t.Log("no error")
+		return nil
 	}
+
+	err2 := nilErrorMaker()
+	if err2 != nil {
+		t.Fatal(err2)
+	}
+	WrapError(&err2)
+	if err2 != nil {
+		t.Fatal(err2)
+	}	
 }
