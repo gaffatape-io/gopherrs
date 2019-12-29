@@ -153,3 +153,15 @@ func TestIsCodeSuccessShortcut(t *testing.T) {
 		t.Fatal(ok)
 	}
 }
+
+func TestWrapWithNil(t *testing.T) {
+	err := Wrap(nil)
+	if err != nil {
+		t.Fatal()
+	}
+
+	errf := Wrapf(nil, "ignored")
+	if errf != nil {
+		t.Fatal()
+	}
+}

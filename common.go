@@ -78,10 +78,18 @@ func Code(err error) codes.Code {
 }
 
 func Wrap(cause error) *GRPCError {
+	if cause == nil {
+		return nil
+	}
+	
 	return Wrapf(cause, "")
 }
 
 func Wrapf(cause error, f string, data ...interface{}) *GRPCError {
+	if cause == nil {
+		return nil
+	}
+	
 	code := Code(cause)
 	return newError(cause, code, f, data)
 }
