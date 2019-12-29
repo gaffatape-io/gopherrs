@@ -140,7 +140,7 @@ func TestErrors(t *testing.T) {
 			t.Fatal(Code(we), Code(err))
 		}
 
-		wef := Wrapf(err, "text")
+		wef := Wrapf(err, "wrapper")
 		if Code(wef) != Code(err) {
 			t.Fatal(Code(wef), Code(err))
 		}
