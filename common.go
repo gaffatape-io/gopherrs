@@ -16,6 +16,7 @@ type GRPCError struct {
 	StackTrace []byte
 	DescFmt    string
 	DescData   []interface{}
+	wrapper    bool
 }
 
 // Error implements the error interface.
@@ -45,7 +46,7 @@ func (g *GRPCError) Error() string {
 }
 
 func newError(cause error, code codes.Code, format string, data []interface{}) *GRPCError {
-	err := &GRPCError{cause, code, nil, "", nil}
+	err := &GRPCError{cause, code, nil, "", nil, false}
 
 	err.StackTrace = debug.Stack()
 	err.DescFmt = format
@@ -77,21 +78,27 @@ func Code(err error) codes.Code {
 	return status.Code(err)
 }
 
-func Wrap(cause error) *GRPCError {
-	if cause == nil {
-		return nil
+func WrapError(cause *error) {
+	WrapErrorf(cause, "")
+}
+
+func WrapErrorf(cause *error, f string, data ...interface{}) {
+	if *cause == nil {
+		return
 	}
-	
+
+	*cause = Wrapf(*cause, f, data)
+}
+
+func Wrap(cause error) *GRPCError {	
 	return Wrapf(cause, "")
 }
 
 func Wrapf(cause error, f string, data ...interface{}) *GRPCError {
-	if cause == nil {
-		return nil
-	}
-	
 	code := Code(cause)
-	return newError(cause, code, f, data)
+	werr := newError(cause, code, f, data)
+	werr.wrapper = true
+	return werr
 }
 
 func Canceled(cause error) *GRPCError {
