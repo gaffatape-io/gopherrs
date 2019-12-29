@@ -77,6 +77,15 @@ func Code(err error) codes.Code {
 	return status.Code(err)
 }
 
+func Wrap(cause error) *GRPCError {
+	return Wrapf(cause, "")
+}
+
+func Wrapf(cause error, f string, data ...interface{}) *GRPCError {
+	code := Code(cause)
+	return newError(cause, code, f, data)
+}
+
 func Canceled(cause error) *GRPCError {
 	return Canceledf(cause, "")
 }
