@@ -111,3 +111,12 @@ func (e *E) writeError(b *strings.Builder, indent string) {
 func (e *E) Unwrap() error {
 	return e.Cause
 }
+
+// Is is called by errors.Is; checks against the Code.
+func (e *E) Is(err error) bool {
+	if c, ok := err.(Code); ok {
+		return e.Code == c
+	}
+
+	return false
+}

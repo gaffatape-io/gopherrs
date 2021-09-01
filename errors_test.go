@@ -1,6 +1,7 @@
 package gopherrs
 
 import (
+	"errors"
 	"runtime"
 	"strings"
 	"testing"
@@ -87,5 +88,32 @@ func TestNewE(t *testing.T) {
 
 	if !strings.HasPrefix(e.Error(), "InvalidArgument bar foo") {
 		t.Fatal()
+	}
+}
+
+func TestErrorsIs(t *testing.T) {
+	tests := []struct {
+		err *E
+		c Code
+		is bool
+	} {
+		{
+			NewE(InvalidArgument, ""),
+			InvalidArgument,
+			true,
+		},
+		{	
+			Wrap(NewE(InvalidArgument, ""), Unknown, ""),
+			Unknown,
+			true,
+		},
+	}
+
+	for _, tc := range tests {
+		g := errors.Is(tc.err, tc.c)
+		t.Log(tc)
+		if g != tc.is {
+			t.Fatal()
+		}
 	}
 }

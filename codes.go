@@ -3,6 +3,10 @@ package gopherrs
 
 type Code uint32
 
+func (c Code) Error() string {
+	return c.String()
+}
+
 const (
 	// OK is returned on success.
 	OK Code = 0
