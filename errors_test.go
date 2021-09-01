@@ -7,7 +7,9 @@ import (
 	"testing"
 )
 
-func TestEError(t *testing.T) {
+// TestsEErrorCallstack checks that the callstack is correct.
+// Don't do this check in other tests!
+func TestEErrorCallstack(t *testing.T) {
 	b:= &strings.Builder{}	
 	s := make([]uintptr, 32)
 
@@ -16,13 +18,13 @@ func TestEError(t *testing.T) {
 	// Keep together since this test uses the line number from
 	// the first call to figure out the line number of the second call.
 	n := runtime.Callers(1, s)
-	e := NewE(msg)
+	e := NewE(InvalidArgument, msg)
 	
 	writeCallstack(b, s[:n])
 
 	diff := &strings.Builder{}
 	got := e.Error()
-	want := msg + "\n" + b.String()
+	want := "InvalidArgument " + msg + "\n" + b.String()
 
 	count := len(got)
 	if len(want) > len(got) {
@@ -44,6 +46,7 @@ func TestEError(t *testing.T) {
 		}
 
 		markDiff := func(txt string, i int) string {
+			// TODO(dape): make sure this work even if diff is at start of string.
 			return fmt.Sprintf("%s[%c]%s",txt[i-3:i], txt[i], txt[i+1:i+3])
 		}
 		
@@ -60,5 +63,24 @@ func TestEError(t *testing.T) {
 	if diff.String() != "98" {
 		t.Fatal()
 	}
+
+	t.Log(got)
 }
 
+func TestNewEf(t *testing.T) {
+	e := NewEf(InvalidArgument, "foo %s", "bar")
+	t.Log(e)
+	
+	if !strings.HasPrefix(e.Error(), "InvalidArgument foo bar") {
+		t.Fatal()
+	}
+}
+
+func TestNewE(t *testing.T) {
+	e := NewE(InvalidArgument, "bar foo")
+	t.Log(e)
+
+	if !strings.HasPrefix(e.Error(), "InvalidArgument bar foo") {
+		t.Fatal()
+	}
+}

@@ -11,7 +11,9 @@ var maxCallstackDepth = flag.Int("max_callstack_depth", 32, "Max stackframes to 
 
 // E is the implementation of the error interface.
 type E struct {
+	Code Code
 	Message string
+	FormatArgs []interface{}
 	Callstack []uintptr
 }
 
@@ -21,8 +23,14 @@ func callstack() []uintptr {
 	return s[:n]
 }
 
-func NewE(msg string) *E {
-	return &E{msg, callstack()}
+// NewE returns a newly created error.
+func NewE(code Code, msg string) *E {
+	return &E{code, msg, nil, callstack()}
+}
+
+// NewEf returns a new created error with formatting.
+func NewEf(code Code, msg string, args ...interface{}) *E {
+	return &E{code, msg, args, callstack()}
 }
 
 func writeCallstack(b *strings.Builder, callstack []uintptr) {
@@ -45,7 +53,14 @@ func writeCallstack(b *strings.Builder, callstack []uintptr) {
 // Error implements the error interface.
 func (e *E) Error() string {
 	b := &strings.Builder{}
-	b.WriteString(e.Message)
+	b.WriteString(e.Code.String())
+	b.WriteByte(' ')
+	if e.FormatArgs == nil {
+		b.WriteString(e.Message)
+	} else {
+		b.WriteString(fmt.Sprintf(e.Message, e.FormatArgs...))
+	}
+
 	b.WriteByte('\n')
 	writeCallstack(b, e.Callstack)
 	return b.String()
