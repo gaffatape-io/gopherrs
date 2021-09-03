@@ -1,5 +1,5 @@
 //go:generate stringer -type=Code
-package gopherrs
+package codes
 
 type Code uint32
 

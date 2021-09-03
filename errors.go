@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"runtime"
+
+	"github.com/gaffatape-io/gopherrs/codes"
 )
 
 type framesIter interface {
@@ -23,7 +25,7 @@ var (
 
 // E is the implementation of the error interface.
 type E struct {
-	Code Code
+	Code codes.Code
 	Message string
 	FormatArgs []interface{}
 	Callstack []uintptr
@@ -37,22 +39,22 @@ func callstack() []uintptr {
 }
 
 // NewE returns a newly created error.
-func NewE(code Code, msg string) *E {
+func NewE(code codes.Code, msg string) *E {
 	return &E{code, msg, nil, callstack(), nil}
 }
 
 // NewEf returns a new created error with formatting.
-func NewEf(code Code, msg string, args ...interface{}) *E {
+func NewEf(code codes.Code, msg string, args ...interface{}) *E {
 	return &E{code, msg, args, callstack(), nil}
 }
 
 // Wrap returns an error that wraps an existing error.
-func Wrap(cause error, code Code, msg string) *E {
+func Wrap(cause error, code codes.Code, msg string) *E {
 	return &E{code, msg, nil, callstack(), cause}
 }
 
 // Wrapf returns an error with formatting that wraps an existing error.
-func Wrapf(cause error, code Code, msg string, args ...interface{}) *E {
+func Wrapf(cause error, code codes.Code, msg string, args ...interface{}) *E {
 	return &E{code, msg, args, callstack(), cause}	
 }
 
@@ -114,7 +116,7 @@ func (e *E) Unwrap() error {
 
 // Is is called by errors.Is; checks against the Code.
 func (e *E) Is(err error) bool {
-	if c, ok := err.(Code); ok {
+	if c, ok := err.(codes.Code); ok {
 		return e.Code == c
 	}
 

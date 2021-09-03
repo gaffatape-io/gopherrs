@@ -2,9 +2,12 @@ package gopherrs
 
 import (
 	"errors"
+	"fmt"
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/gaffatape-io/gopherrs/codes"
 )
 
 func TestEErrorCallstack(t *testing.T) {
@@ -16,19 +19,19 @@ func TestEErrorCallstack(t *testing.T) {
 		txt string
 	} {
 		{
-			NewE(InvalidArgument, msg),
+			NewE(codes.InvalidArgument, msg),
 			"InvalidArgument abcd\nfoo foo.go:1\n",
 		},
 		{
-			NewEf(InvalidArgument, msgf, 1, 2, 3),
+			NewEf(codes.InvalidArgument, msgf, 1, 2, 3),
 			"InvalidArgument 1 2 3\nfoo foo.go:1\n",
 		},
 		{
-			Wrap(NewE(InvalidArgument, msg), Unknown, msg2),
+			Wrap(NewE(codes.InvalidArgument, msg), codes.Unknown, msg2),
 			"Unknown efgh\nfoo foo.go:1\n  InvalidArgument abcd\n  foo foo.go:1\n",
 		},
 		{
-			Wrapf(NewE(InvalidArgument, msg), Unknown, msgf, 4, 5, 6),
+			Wrapf(NewE(codes.InvalidArgument, msg), codes.Unknown, msgf, 4, 5, 6),
 			"Unknown 4 5 6\nfoo foo.go:1\n  InvalidArgument abcd\n  foo foo.go:1\n",
 		},
 		
@@ -74,7 +77,7 @@ var (
 
 
 func TestNewEf(t *testing.T) {
-	e := NewEf(InvalidArgument, "foo %s", "bar")
+	e := NewEf(codes.InvalidArgument, "foo %s", "bar")
 	t.Log(e)
 	
 	if !strings.HasPrefix(e.Error(), "InvalidArgument foo bar") {
@@ -83,7 +86,7 @@ func TestNewEf(t *testing.T) {
 }
 
 func TestNewE(t *testing.T) {
-	e := NewE(InvalidArgument, "bar foo")
+	e := NewE(codes.InvalidArgument, "bar foo")
 	t.Log(e)
 
 	if !strings.HasPrefix(e.Error(), "InvalidArgument bar foo") {
@@ -94,17 +97,17 @@ func TestNewE(t *testing.T) {
 func TestErrorsIs(t *testing.T) {
 	tests := []struct {
 		err *E
-		c Code
+		c codes.Code
 		is bool
 	} {
 		{
-			NewE(InvalidArgument, ""),
-			InvalidArgument,
+			NewE(codes.InvalidArgument, ""),
+			codes.InvalidArgument,
 			true,
 		},
 		{	
-			Wrap(NewE(InvalidArgument, ""), Unknown, ""),
-			Unknown,
+			Wrap(NewE(codes.InvalidArgument, ""), codes.Unknown, ""),
+			codes.Unknown,
 			true,
 		},
 	}
@@ -117,3 +120,42 @@ func TestErrorsIs(t *testing.T) {
 		}
 	}
 }
+
+
+func TestGenerateCodeCtors(t *testing.T) {
+	for _, c := range []codes.Code{
+		codes.Canceled,
+		codes.Unknown,
+		codes.InvalidArgument,
+		codes.DeadlineExceeded,
+		codes.PermissionDenied,
+		codes.ResourceExhausted,
+		codes.FailedPrecondition,
+		codes.Aborted,
+		codes.OutOfRange,
+		codes.Unimplemented,
+		codes.Internal,
+		codes.Unavailable,
+		codes.DataLoss,
+		codes.Unauthenticated,
+	} {
+		fmt.Printf("func %s(msg string) *E {\n", c)
+		fmt.Printf("\treturn NewE(codes.%s, msg)\n", c)
+		fmt.Println("}")
+
+		fmt.Printf("func %sf(msg string, args ...interface{}) *E {\n", c)
+		fmt.Printf("\treturn NewEf(codes.%s, msg, args...)\n", c)
+		fmt.Println("}")
+
+		fmt.Printf("func Wrap%s(cause error, msg string) *E {\n", c)
+		fmt.Printf("\treturn Wrap(cause, codes.%s, msg)\n", c)
+		fmt.Println("}")
+
+		fmt.Printf("func Wrap%sf(cause error, msg string, args ...interface{}) *E {\n", c)
+		fmt.Printf("\treturn Wrapf(cause, codes.%s, msg, args...)\n", c)
+		fmt.Println("}")
+	}
+
+	
+}
+
